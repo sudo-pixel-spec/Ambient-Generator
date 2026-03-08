@@ -26,24 +26,40 @@
   position: relative;
   z-index: 10;
   background: var(--overlay);
-  backdrop-filter: blur(10px);
-  padding: 2rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  padding: 2.5rem;
+  border-radius: 1.5rem;
+  border: 1px solid var(--glass-border);
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2rem;
   width: 90%;
-  max-width: 500px;
-  animation: fadeIn 1.2s ease-out;
+  max-width: 550px;
+  animation: floatUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease, filter 0.8s ease;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
+.controlsOverlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+  filter: blur(20px);
+  transform: translateY(50px) scale(0.95);
+}
+
+.zenModeExitOverlay {
+    position: absolute;
+    inset: 0;
+    z-index: 9;
+    cursor: default;
+}
+
+@keyframes floatUp {
   to {
     opacity: 1;
     transform: translateY(0);
@@ -55,67 +71,187 @@
 }
 
 .title {
-  font-size: 2rem;
-  font-weight: 300;
-  letter-spacing: 0.05em;
+  font-size: 2.5rem;
+  font-weight: 200;
+  letter-spacing: 0.08em;
   margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #fff 0%, #a0aec0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.headerRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.zenButton {
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    color: var(--foreground);
+    padding: 0.4rem 0.8rem;
+    border-radius: 1rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+}
+
+.zenButton:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.presetsPanel {
+    display: flex;
+    gap: 0.8rem;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.8rem;
+    border-radius: 1rem;
+    align-items: center;
+    overflow-x: auto;
+    border: 1px solid rgba(0,0,0,0.4);
+}
+
+.presetLabel {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #64748b;
+}
+
+.presetButton {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--foreground);
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.presetButton:hover {
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .subtitle {
-  font-size: 0.9rem;
-  opacity: 0.7;
+  font-size: 0.95rem;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
 }
 
 .environmentSelector {
   display: flex;
-  gap: 1rem;
+  gap: 1.2rem;
   justify-content: center;
   flex-wrap: wrap;
 }
 
 .envButton {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.03);
   color: var(--foreground);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 0.8rem 1.5rem;
+  border: 1px solid var(--glass-border);
+  padding: 0.8rem 1.8rem;
   border-radius: 2rem;
   cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(5px);
 }
 
 .envButton:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px -10px rgba(0,0,0,0.3);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .envButton.active {
   background: var(--accent);
-  color: #fff;
+  color: #000;
   border-color: var(--accent);
-  box-shadow: 0 4px 15px var(--accent-muted);
+  box-shadow: 0 0 20px var(--accent-glow);
+  transform: translateY(-2px);
+}
+
+.envTrackContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.trackSlider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  outline: none;
+  cursor: pointer;
+  margin-top: 0.4rem;
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+@keyframes slideDown {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.trackSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.trackSlider::-webkit-slider-thumb:hover {
+  transform: scale(1.4);
+  box-shadow: 0 0 15px var(--accent);
 }
 
 .volumeControl {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  gap: 0.8rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--glass-border);
 }
 
 .volumeLabel {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  opacity: 0.8;
+  letter-spacing: 0.15em;
+  color: #64748b;
 }
 
 .volumeSlider {
   -webkit-appearance: none;
-  width: 80%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.2);
+  appearance: none;
+  width: 90%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 5px;
   outline: none;
   cursor: pointer;
@@ -124,14 +260,16 @@
 .volumeSlider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: var(--foreground);
+  background: #fff;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
 
 .volumeSlider::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
+  transform: scale(1.3);
+  box-shadow: 0 4px 12px rgba(255,255,255,0.3);
 }
