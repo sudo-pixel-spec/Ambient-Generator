@@ -2,13 +2,13 @@
 
 Ambient Generator is a lightweight web application that creates relaxing soundscapes directly in the browser using **procedural audio synthesis** and **canvas animations**.
 
-Unlike typical ambient apps, this project **does not use audio files**. All sounds are generated in real time using the **Web Audio API**.
+Unlike traditional ambient apps, this project **does not use audio files**. All sounds are generated in real time using the **Web Audio API**.
 
 ---
 
-## Features
+# Features
 
-### Ambient Environments
+## Ambient Environments
 
 * 🌧 **Rain**
 * 🌊 **Ocean Waves**
@@ -16,29 +16,36 @@ Unlike typical ambient apps, this project **does not use audio files**. All soun
 * 🔥 **Fireplace**
 * 🌲 **Deep Forest**
 * 🚆 **Train Journey**
-
-### Audio Controls
-
-* 🎚 **Individual volume control for each environment**
-* 🔊 **Master volume control**
-* 🎧 **Real-time audio synthesis**
-* ⚡ **No audio assets required**
-
-### Experience Features
-
-* 🧘 **Zen Mode** for distraction-free listening
-* ⏱ **Timer** to stop ambience automatically
-* 🎛 **Preset soundscapes**
-* 🖱 **Interactive spatial audio (mouse-based panning)**
-
-### Visuals
-
-* 🎨 Canvas-based animated environments
-* 🌌 Dynamic visualizer that adapts to the active ambience
+* ❄️ **Snow Cabin**
 
 ---
 
-## Tech Stack
+## Audio Controls
+
+* 🎚 **Individual volume control for each environment**
+* 🔊 **Master volume control**
+* 🎧 **Real-time sound synthesis**
+* ⚡ **No audio assets required**
+
+---
+
+## Experience Features
+
+* 🧘 **Zen Mode** – distraction-free listening
+* ⏱ **Sleep Timer** – automatically stop ambience
+* 🎛 **Preset soundscapes**
+* 🖱 **Interactive spatial audio (mouse-based panning)**
+
+---
+
+## Visuals
+
+* 🎨 Canvas-based animated environments
+* 🌌 Dynamic visualizer reacting to active ambience
+
+---
+
+# Tech Stack
 
 * **Next.js 16**
 * **React 19**
@@ -48,7 +55,7 @@ Unlike typical ambient apps, this project **does not use audio files**. All soun
 
 ---
 
-## Project Structure
+# Project Structure
 
 ```
 src
@@ -59,7 +66,9 @@ src
  │   └─ page.module.css
  │
  ├─ components
- │   └─ CanvasVisualizer.tsx
+ │   ├─ CanvasVisualizer.tsx
+ │   ├─ Timer.tsx
+ │   └─ Timer.module.css
  │
  └─ lib
      └─ AudioEngine.ts
@@ -67,28 +76,28 @@ src
 
 ---
 
-## Running Locally
+# Running Locally
 
-Clone the repository:
+Clone the repository
 
 ```bash
 git clone https://github.com/sudo-pixel-spec/Ambient-Generator.git
 cd Ambient-Generator
 ```
 
-Install dependencies:
+Install dependencies
 
 ```bash
 npm install
 ```
 
-Run the development server:
+Run the development server
 
 ```bash
 npm run dev
 ```
 
-Open the app:
+Open in browser
 
 ```
 http://localhost:3000
@@ -96,33 +105,31 @@ http://localhost:3000
 
 ---
 
-## How It Works
+# How It Works
 
 Ambient Generator synthesizes sound using mathematical noise and oscillator patterns.
 
 Examples:
 
-* **Rain** → filtered white noise bursts
-* **Waves** → pink noise with rhythmic gain modulation
-* **Fireplace** → brown noise rumble with random crackle spikes
-* **Night Sky** → layered oscillators with slow LFO modulation
+Rain → filtered white noise bursts
+Waves → pink noise with rhythmic gain modulation
+Fireplace → brown noise rumble with random crackle spikes
+Night Sky → layered oscillators with slow LFO modulation
 
 This allows the entire ambient environment to run **fully client-side** with minimal assets.
 
 ---
 
-## Future Improvements
+# Future Improvements
 
-Possible enhancements:
+Possible enhancements
 
 * More ambient environments
-* Custom sound mixing
-* Saveable user presets
-* Mobile optimization
-* Spatial audio enhancements
+* Mobile UI improvements
+* Advanced spatial audio
 
 ---
 
-## License
+# License
 
 MIT License
