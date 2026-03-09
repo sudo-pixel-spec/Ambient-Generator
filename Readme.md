@@ -1,24 +1,40 @@
 # Ambient Generator
 
-A lightweight web app that generates relaxing ambient environments directly in the browser using the **Web Audio API** and **Canvas animations**.
+Ambient Generator is a lightweight web application that creates relaxing soundscapes directly in the browser using **procedural audio synthesis** and **canvas animations**.
 
-No audio files are used, sounds are **procedurally generated** in real time.
+Unlike typical ambient apps, this project **does not use audio files**. All sounds are generated in real time using the **Web Audio API**.
 
 ---
 
 ## Features
 
-* 🌧 **Rain** – soft rainfall ambience
-* 🌊 **Ocean Waves** – gentle wave patterns
-* 🌌 **Night Sky** – calm atmospheric tones
-* 🔥 **Fireplace** – warm crackling ambience
+### Ambient Environments
 
-Additional features:
+* 🌧 **Rain**
+* 🌊 **Ocean Waves**
+* 🌌 **Night Sky**
+* 🔥 **Fireplace**
+* 🌲 **Deep Forest**
+* 🚆 **Train Journey**
 
-* 🎧 Real-time sound synthesis with Web Audio API
+### Audio Controls
+
+* 🎚 **Individual volume control for each environment**
+* 🔊 **Master volume control**
+* 🎧 **Real-time audio synthesis**
+* ⚡ **No audio assets required**
+
+### Experience Features
+
+* 🧘 **Zen Mode** for distraction-free listening
+* ⏱ **Timer** to stop ambience automatically
+* 🎛 **Preset soundscapes**
+* 🖱 **Interactive spatial audio (mouse-based panning)**
+
+### Visuals
+
 * 🎨 Canvas-based animated environments
-* 🔊 Volume control
-* ⚡ Runs entirely in the browser (no audio assets)
+* 🌌 Dynamic visualizer that adapts to the active ambience
 
 ---
 
@@ -39,7 +55,8 @@ src
  ├─ app
  │   ├─ page.tsx
  │   ├─ layout.tsx
- │   └─ globals.css
+ │   ├─ globals.css
+ │   └─ page.module.css
  │
  ├─ components
  │   └─ CanvasVisualizer.tsx
@@ -65,13 +82,13 @@ Install dependencies:
 npm install
 ```
 
-Start development server:
+Run the development server:
 
 ```bash
 npm run dev
 ```
 
-Open:
+Open the app:
 
 ```
 http://localhost:3000
@@ -79,9 +96,30 @@ http://localhost:3000
 
 ---
 
-## Idea
+## How It Works
 
-This project explores how **ambient soundscapes can be synthesized entirely in the browser** using mathematical noise generation and oscillators instead of traditional audio files.
+Ambient Generator synthesizes sound using mathematical noise and oscillator patterns.
+
+Examples:
+
+* **Rain** → filtered white noise bursts
+* **Waves** → pink noise with rhythmic gain modulation
+* **Fireplace** → brown noise rumble with random crackle spikes
+* **Night Sky** → layered oscillators with slow LFO modulation
+
+This allows the entire ambient environment to run **fully client-side** with minimal assets.
+
+---
+
+## Future Improvements
+
+Possible enhancements:
+
+* More ambient environments
+* Custom sound mixing
+* Saveable user presets
+* Mobile optimization
+* Spatial audio enhancements
 
 ---
 
