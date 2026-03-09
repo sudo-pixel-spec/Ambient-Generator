@@ -13,7 +13,10 @@ export default function Home() {
   
   const [masterVolume, setMasterVolume] = useState<number>(0.5);
   const [zenMode, setZenMode] = useState<boolean>(false);
+  const [proMode, setProMode] = useState<boolean>(false);
+  const [masterMeter, setMasterMeter] = useState<number>(0);
   const audioRef = useRef<AudioEngine | null>(null);
+  const requestRef = useRef<number>(0);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -53,6 +56,7 @@ export default function Home() {
               if (env === "Deep Forest") audioRef.current?.playDeepForest();
               if (env === "Train Journey") audioRef.current?.playTrainJourney();
               if (env === "Snow Cabin") audioRef.current?.playSnowCabin();
+              if (env === "Thunderstorm") audioRef.current?.playThunderstorm();
           }
           audioRef.current?.setTrackVolume(env, preset[env]);
       });
@@ -60,7 +64,7 @@ export default function Home() {
   };
 
   const generateSurprise = () => {
-      const allOptions = ["Rain", "Waves", "Fireplace", "Night Sky", "Deep Forest", "Train Journey", "Snow Cabin"];
+      const allOptions = ["Rain", "Waves", "Fireplace", "Night Sky", "Deep Forest", "Train Journey", "Snow Cabin", "Thunderstorm"];
       const mixSize = Math.floor(Math.random() * 3) + 2;
       const shuffled = allOptions.sort(() => 0.5 - Math.random());
       const selected = shuffled.slice(0, mixSize);
@@ -74,21 +78,56 @@ export default function Home() {
 
   useEffect(() => {
     audioRef.current = new AudioEngine();
-    audioRef.current.setVolume(masterVolume);
+    audioRef.current.setVolume(0.5);
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleVisibilityChange = () => {
         if (!audioRef.current) return;
-        const panValue = (e.clientX / window.innerWidth) * 2 - 1;
-        audioRef.current.setPan(panValue * 0.6);
+        if (document.hidden) {
+            audioRef.current.setMuffled(true);
+        } else {
+            audioRef.current.setMuffled(false);
+        }
     };
-    
-    window.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-        window.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
         audioRef.current?.stopAll();
     };
   }, []);
+
+  useEffect(() => {
+    const updateMeter = () => {
+        if (audioRef.current && audioRef.current.analyserNode && proMode) {
+            const dataArray = new Uint8Array(audioRef.current.analyserNode.frequencyBinCount);
+            audioRef.current.analyserNode.getByteTimeDomainData(dataArray);
+            
+            let sumSquares = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                const normalized = (dataArray[i] / 128) - 1.0;
+                sumSquares += normalized * normalized;
+            }
+            const rms = Math.sqrt(sumSquares / dataArray.length);
+            setMasterMeter(Math.min(100, rms * 400));
+        } else {
+            setMasterMeter(0);
+        }
+        requestRef.current = requestAnimationFrame(updateMeter);
+    };
+    requestRef.current = requestAnimationFrame(updateMeter);
+
+    const handleMouseMove = (e: MouseEvent) => {
+        if (!audioRef.current || proMode) return;
+        const panValue = (e.clientX / window.innerWidth) * 2 - 1;
+        audioRef.current.setPan(panValue * 0.6);
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+        if (requestRef.current) cancelAnimationFrame(requestRef.current);
+        window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, [proMode]);
 
   const handleMasterVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
@@ -109,14 +148,20 @@ export default function Home() {
       if (env === "Night Sky") audioRef.current?.playNightSky();
       if (env === "Deep Forest") audioRef.current?.playDeepForest();
       if (env === "Train Journey") audioRef.current?.playTrainJourney();
+      if (env === "Snow Cabin") audioRef.current?.playSnowCabin();
+      if (env === "Thunderstorm") audioRef.current?.playThunderstorm();
       audioRef.current?.setTrackVolume(env, 0.5);
     }
     setActiveEnvs(newEnvs);
   };
 
   const handleTrackVolumeChange = (env: string, val: number) => {
-      setActiveEnvs(prev => ({ ...prev, [env]: val }));
+      setActiveEnvs(prev => ({...prev, [env]: val}));
       audioRef.current?.setTrackVolume(env, val);
+  };
+
+  const handleTrackPanChange = (env: string, val: number) => {
+      audioRef.current?.setTrackPan(env, val);
   };
 
   return (
@@ -134,84 +179,141 @@ export default function Home() {
           <CanvasVisualizer activeEnvs={Object.keys(activeEnvs)} />
         </div>
 
-        <div className={`${styles.controlsOverlay} ${zenMode ? styles.hidden : ""}`}>
-          <div className={styles.headerRow}>
-              <div>
-                  <h1 className={styles.title}>Ambient Generator</h1>
-                  <p className={styles.subtitle}>Mix your perfect environment</p>
+        <div className={`${styles.kineticConsole} ${zenMode ? styles.hidden : ""}`}>
+          
+          <div className={`${styles.orbContainer} ${styles.orbTopLeft}`}>
+              <button className={styles.orbButton} aria-label="Presets">
+                 ✨
+              </button>
+              <div className={styles.drawerPanel}>
+                  <div className={styles.drawerTitle}>Surprise Me</div>
+                  <div className={styles.presetsPanel}>
+                      <button onClick={() => loadPreset({"Deep Forest": 0.8, "Rain": 0.3})} className={styles.presetButton}>Cozy Cabin</button>
+                      <button onClick={() => loadPreset({"Train Journey": 0.6, "Night Sky": 0.7, "Rain": 0.2})} className={styles.presetButton}>Midnight Express</button>
+                      <button onClick={() => loadPreset({"Snow Cabin": 0.9, "Fireplace": 0.6})} className={styles.presetButton}>Blizzard Fire</button>
+                      <button onClick={generateSurprise} className={`${styles.presetButton} ${styles.surpriseBtn}`}>🎲 Generate Random</button>
+                      <button onClick={() => { setActiveEnvs({}); audioRef.current?.stopAll(); }} className={styles.presetButton}>Clear All</button>
+                  </div>
               </div>
-              <button className={styles.zenButton} onClick={() => setZenMode(true)}>
-                  ☽ Zen Mode
+          </div>
+
+          <div className={`${styles.orbContainer} ${styles.orbTopRight}`}>
+              <button className={styles.orbButton} onClick={() => setZenMode(true)} aria-label="Zen Mode" title="Zen Mode">
+                 ☽
               </button>
           </div>
 
-          <div className={styles.presetsPanel}>
-              <span className={styles.presetLabel}>Presets:</span>
-              <button onClick={() => loadPreset({"Deep Forest": 0.8, "Rain": 0.3})} className={styles.presetButton}>Cozy Cabin</button>
-              <button onClick={() => loadPreset({"Train Journey": 0.6, "Night Sky": 0.7, "Rain": 0.2})} className={styles.presetButton}>Midnight Express</button>
-              <button onClick={() => loadPreset({"Snow Cabin": 0.9, "Fireplace": 0.6})} className={styles.presetButton}>Blizzard Fire</button>
-              <button onClick={generateSurprise} className={`${styles.presetButton} ${styles.surpriseBtn}`}>🎲 Surprise Me</button>
-              <button onClick={() => { setActiveEnvs({}); audioRef.current?.stopAll(); }} className={styles.presetButton}>Clear All</button>
+          <div className={`${styles.orbContainer} ${styles.orbBottomLeft}`}>
+              <button className={styles.orbButton} aria-label="Master Controls">
+                 🎛️
+              </button>
+              <div className={styles.drawerPanel}>
+                  <div className={styles.drawerTitle}>Pro Mixer</div>
+                  <div className={styles.masterControlsBox}>
+                      <div className={styles.volumeControl}>
+                        <label className={styles.volumeLabel}>Master Gain</label>
+                        <input 
+                          type="range" 
+                          min="0" max="1" step="0.01" 
+                          value={masterVolume} 
+                          onChange={handleMasterVolumeChange}
+                          className={styles.volumeSlider}
+                        />
+                      </div>
+                      
+                      <div className={styles.proModeToggle}>
+                          <label className={styles.proLabel}>
+                              <input type="checkbox" checked={proMode} onChange={e => setProMode(e.target.checked)} />
+                              Enable Pro Panning
+                          </label>
+                          {proMode && (
+                              <div className={styles.meterContainer}>
+                                  <div className={styles.meterFill} style={{ width: `${masterMeter}%` }} />
+                              </div>
+                          )}
+                      </div>
+                  </div>
+              </div>
           </div>
 
-          <div className={styles.environmentSelector}>
-            {ENVIRONMENTS.map((env) => (
-              <div key={env} className={styles.envTrackContainer}>
-                  <button
-                    className={`${styles.envButton} ${activeEnvs[env] !== undefined ? styles.active : ""}`}
-                    onClick={() => toggleEnv(env)}
-                  >
-                    {env}
-                  </button>
-                  {activeEnvs[env] !== undefined && (
-                      <input
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.01"
-                          value={activeEnvs[env]}
+          <div className={`${styles.orbContainer} ${styles.orbBottomRight}`}>
+              <button className={styles.orbButton} aria-label="Timer">
+                 ⏱️
+              </button>
+              <div className={styles.drawerPanel}>
+                   <div className={styles.drawerTitle}>Focus Session</div>
+                   <Timer />
+              </div>
+          </div>
+
+          <div className={styles.activeTrackStack}>
+             {Object.keys(activeEnvs).map((env) => (
+                <div key={`pod-${env}`} className={styles.trackPod}>
+                    <div className={styles.podHeader}>
+                        <span className={styles.podTitle}>{env}</span>
+                        <button className={styles.podClose} onClick={() => toggleEnv(env)}>×</button>
+                    </div>
+                    <div className={styles.trackControls}>
+                        <input 
+                          type="range" 
+                          min="0" max="1" step="0.01" 
+                          value={activeEnvs[env]} 
                           onChange={(e) => handleTrackVolumeChange(env, parseFloat(e.target.value))}
                           className={styles.trackSlider}
-                      />
-                  )}
-              </div>
-            ))}
-            <div key="Snow Cabin" className={styles.envTrackContainer}>
-                <button
-                    className={`${styles.envButton} ${activeEnvs["Snow Cabin"] !== undefined ? styles.active : ""}`}
-                    onClick={() => toggleEnv("Snow Cabin")}
+                          title="Volume"
+                        />
+                        {proMode && (
+                            <input 
+                              type="range" 
+                              min="-1" max="1" step="0.05" 
+                              defaultValue="0"
+                              onChange={(e) => handleTrackPanChange(env, parseFloat(e.target.value))}
+                              className={styles.panSlider}
+                              title="L/R Panning"
+                            />
+                        )}
+                    </div>
+                </div>
+             ))}
+          </div>
+
+          <div className={styles.floatingDock}>
+            {ENVIRONMENTS.map((env) => (
+                <button 
+                  key={`dock-${env}`}
+                  className={`${styles.dockButton} ${activeEnvs[env] !== undefined ? styles.active : ""}`}
+                  onClick={() => toggleEnv(env)}
+                  data-tooltip={env}
+                  aria-label={env}
                 >
-                    Snow Cabin
+                  {env === "Rain" && "🌧️"}
+                  {env === "Waves" && "🌊"}
+                  {env === "Night Sky" && "🌌"}
+                  {env === "Fireplace" && "🔥"}
+                  {env === "Deep Forest" && "🌲"}
+                  {env === "Train Journey" && "🚂"}
                 </button>
-                {activeEnvs["Snow Cabin"] !== undefined && (
-                    <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        value={activeEnvs["Snow Cabin"]}
-                        onChange={(e) => handleTrackVolumeChange("Snow Cabin", parseFloat(e.target.value))}
-                        className={styles.trackSlider}
-                    />
-                )}
-            </div>
+            ))}
+            <button
+                key="dock-Snow-Cabin"
+                className={`${styles.dockButton} ${activeEnvs["Snow Cabin"] !== undefined ? styles.active : ""}`}
+                onClick={() => toggleEnv("Snow Cabin")}
+                data-tooltip="Snow Cabin"
+                aria-label="Snow Cabin"
+            >
+                ❄️
+            </button>
+            <button
+                key="dock-Thunderstorm"
+                className={`${styles.dockButton} ${activeEnvs["Thunderstorm"] !== undefined ? styles.active : ""}`}
+                onClick={() => toggleEnv("Thunderstorm")}
+                data-tooltip="Thunderstorm"
+                aria-label="Thunderstorm"
+            >
+                ⚡
+            </button>
           </div>
 
-          <div className={styles.volumeControl}>
-            <label htmlFor="masterVolumeSlider" className={styles.volumeLabel}>Master Volume</label>
-            <input
-              id="masterVolumeSlider"
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={masterVolume}
-              onChange={handleMasterVolumeChange}
-              className={styles.volumeSlider}
-            />
-          </div>
-
-          <Timer />
         </div>
       </main>
     </div>

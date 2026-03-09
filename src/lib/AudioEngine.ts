@@ -2,11 +2,14 @@ export class AudioEngine {
   ctx: AudioContext | null = null;
   masterGain: GainNode | null = null;
   pannerNode: StereoPannerNode | null = null;
+  focusFilter: BiquadFilterNode | null = null;
+  analyserNode: AnalyserNode | null = null;
   activeTracks: {
     [env: string]: {
       nodes: AudioNode[];
       intervals: number[];
       envGain: GainNode;
+      envPanner: StereoPannerNode;
     };
   } = {};
 
@@ -16,11 +19,20 @@ export class AudioEngine {
       this.masterGain = this.ctx.createGain();
       this.masterGain.gain.value = 0.5;
 
+      this.focusFilter = this.ctx.createBiquadFilter();
+      this.focusFilter.type = "lowpass";
+      this.focusFilter.frequency.value = 24000;
+
       this.pannerNode = this.ctx.createStereoPanner();
       this.pannerNode.pan.value = 0;
 
-      this.masterGain.connect(this.pannerNode);
-      this.pannerNode.connect(this.ctx.destination);
+      this.analyserNode = this.ctx.createAnalyser();
+      this.analyserNode.fftSize = 256;
+
+      this.masterGain.connect(this.focusFilter);
+      this.focusFilter.connect(this.pannerNode);
+      this.pannerNode.connect(this.analyserNode);
+      this.analyserNode.connect(this.ctx.destination);
     }
   }
 
@@ -28,6 +40,13 @@ export class AudioEngine {
     if (this.ctx?.state === "suspended") {
       this.ctx.resume();
     }
+  }
+
+  public setMuffled(muffled: boolean) {
+      if (this.focusFilter && this.ctx) {
+          const targetFreq = muffled ? 600 : 24000;
+          this.focusFilter.frequency.exponentialRampToValueAtTime(targetFreq, this.ctx.currentTime + 2.0);
+      }
   }
 
   public setVolume(vol: number) {
@@ -46,6 +65,13 @@ export class AudioEngine {
       const track = this.activeTracks[env];
       if (track && this.ctx) {
           track.envGain.gain.linearRampToValueAtTime(Math.max(vol, 0.001), this.ctx.currentTime + 0.1);
+      }
+  }
+
+  public setTrackPan(env: string, panValue: number) {
+      const track = this.activeTracks[env];
+      if (track && this.ctx) {
+          track.envPanner.pan.linearRampToValueAtTime(panValue, this.ctx.currentTime + 0.1);
       }
   }
 
@@ -82,9 +108,13 @@ export class AudioEngine {
     envGain.gain.value = 0.001; 
     envGain.gain.linearRampToValueAtTime(0.5, this.ctx.currentTime + 2);
 
+    const envPanner = this.ctx.createStereoPanner();
+    envPanner.pan.value = 0;
+
     noiseSource.connect(filter);
     filter.connect(envGain);
-    envGain.connect(this.masterGain);
+    envGain.connect(envPanner);
+    envPanner.connect(this.masterGain);
 
     noiseSource.start();
     lfo.start();
@@ -93,6 +123,7 @@ export class AudioEngine {
       nodes: [noiseSource, filter, lfo, lfoGain],
       intervals: [],
       envGain,
+      envPanner,
     };
   }
 
@@ -132,10 +163,14 @@ export class AudioEngine {
     envGain.gain.value = 0.001;
     envGain.gain.linearRampToValueAtTime(0.6, this.ctx.currentTime + 2);
 
+    const envPanner = this.ctx.createStereoPanner();
+    envPanner.pan.value = 0;
+
     noiseSource.connect(filter);
     filter.connect(waveGain);
     waveGain.connect(envGain);
-    envGain.connect(this.masterGain);
+    envGain.connect(envPanner);
+    envPanner.connect(this.masterGain);
 
     noiseSource.start();
 
@@ -156,6 +191,7 @@ export class AudioEngine {
       nodes: [noiseSource, filter, waveGain],
       intervals: [interval],
       envGain,
+      envPanner,
     };
   }
 
@@ -170,6 +206,9 @@ export class AudioEngine {
     const envGain = this.ctx.createGain();
     envGain.gain.value = 0.001;
     envGain.gain.linearRampToValueAtTime(0.4, this.ctx.currentTime + 3);
+    
+    const envPanner = this.ctx.createStereoPanner();
+    envPanner.pan.value = 0;
 
     chords.forEach((freq) => {
       const osc = this.ctx!.createOscillator();
@@ -198,12 +237,14 @@ export class AudioEngine {
       gains.push(g, lfoAmp);
     });
 
-    envGain.connect(this.masterGain);
+    envGain.connect(envPanner);
+    envPanner.connect(this.masterGain);
 
     this.activeTracks["Night Sky"] = {
       nodes: [...synths, ...gains],
       intervals: [],
       envGain,
+      envPanner,
     };
   }
 
@@ -229,9 +270,13 @@ export class AudioEngine {
     envGain.gain.value = 0.001;
     envGain.gain.linearRampToValueAtTime(0.5, this.ctx.currentTime + 2);
 
+    const envPanner = this.ctx.createStereoPanner();
+    envPanner.pan.value = 0;
+
     noiseSource.connect(rumbleFilter);
     rumbleFilter.connect(envGain);
-    envGain.connect(this.masterGain);
+    envGain.connect(envPanner);
+    envPanner.connect(this.masterGain);
 
     noiseSource.start();
 
@@ -273,6 +318,7 @@ export class AudioEngine {
       nodes: trackNodes,
       intervals: trackIntervals,
       envGain,
+      envPanner,
     };
   }
 
@@ -306,9 +352,13 @@ export class AudioEngine {
       envGain.gain.value = 0.001;
       envGain.gain.linearRampToValueAtTime(0.5, this.ctx.currentTime + 2);
   
+      const envPanner = this.ctx.createStereoPanner();
+      envPanner.pan.value = 0;
+
       noiseSource.connect(windFilter);
       windFilter.connect(envGain);
-      envGain.connect(this.masterGain);
+      envGain.connect(envPanner);
+      envPanner.connect(this.masterGain);
   
       noiseSource.start();
       windLfo.start();
@@ -347,6 +397,7 @@ export class AudioEngine {
         nodes: trackNodes,
         intervals: trackIntervals,
         envGain,
+        envPanner,
       };
   }
 
@@ -372,9 +423,13 @@ export class AudioEngine {
       envGain.gain.value = 0.001;
       envGain.gain.linearRampToValueAtTime(0.5, this.ctx.currentTime + 2);
   
+      const envPanner = this.ctx.createStereoPanner();
+      envPanner.pan.value = 0;
+
       noiseSource.connect(lowFilter);
       lowFilter.connect(envGain);
-      envGain.connect(this.masterGain);
+      envGain.connect(envPanner);
+      envPanner.connect(this.masterGain);
       noiseSource.start();
   
       const trackNodes: AudioNode[] = [noiseSource, lowFilter];
@@ -410,6 +465,7 @@ export class AudioEngine {
         nodes: trackNodes,
         intervals: trackIntervals,
         envGain,
+        envPanner,
       };
   }
 
@@ -445,9 +501,13 @@ export class AudioEngine {
       envGain.gain.value = 0.001;
       envGain.gain.linearRampToValueAtTime(0.6, this.ctx.currentTime + 3);
 
+      const envPanner = this.ctx.createStereoPanner();
+      envPanner.pan.value = 0;
+
       windSource.connect(bandpass);
       bandpass.connect(envGain);
-      envGain.connect(this.masterGain);
+      envGain.connect(envPanner);
+      envPanner.connect(this.masterGain);
 
       windSource.start();
       windLfo.start();
@@ -488,8 +548,138 @@ export class AudioEngine {
       this.activeTracks["Snow Cabin"] = {
           nodes: trackNodes,
           intervals: trackIntervals,
-          envGain
+          envGain,
+          envPanner
       };
+  }
+
+  public playThunderstorm() {
+      this.init();
+      if (!this.ctx || !this.masterGain || this.activeTracks["Thunderstorm"]) return;
+
+      const bufferSize = this.ctx.sampleRate * 2;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const rainSource = this.ctx.createBufferSource();
+      rainSource.buffer = buffer;
+      rainSource.loop = true;
+
+      const rainFilter = this.ctx.createBiquadFilter();
+      rainFilter.type = "lowpass";
+      rainFilter.frequency.value = 1500;
+
+      const envGain = this.ctx.createGain();
+      envGain.gain.value = 0.001;
+      envGain.gain.linearRampToValueAtTime(0.7, this.ctx.currentTime + 2);
+
+      const envPanner = this.ctx.createStereoPanner();
+      envPanner.pan.value = 0;
+
+      rainSource.connect(rainFilter);
+      rainFilter.connect(envGain);
+      envGain.connect(envPanner);
+      envPanner.connect(this.masterGain);
+
+      rainSource.start();
+
+      const trackNodes: AudioNode[] = [rainSource, rainFilter];
+      const trackIntervals: number[] = [];
+
+      const triggerThunder = (intensity: number) => {
+          if (!this.ctx || !this.activeTracks["Thunderstorm"]) return;
+          
+          const tBuffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 4, this.ctx.sampleRate);
+          const tData = tBuffer.getChannelData(0);
+          for(let i=0; i<tBuffer.length; i++) {
+              tData[i] = Math.random() * 2 - 1;
+          }
+          const thunderSource = this.ctx.createBufferSource();
+          thunderSource.buffer = tBuffer;
+
+          const distAmount = 50;
+          const curve = new Float32Array(44100);
+          const deg = Math.PI / 180;
+          for (let i = 0; i < 44100; ++i) {
+            const x = (i * 2) / 44100 - 1;
+            curve[i] = ((3 + distAmount) * x * 20 * deg) / (Math.PI + distAmount * Math.abs(x));
+          }
+          const distortion = this.ctx.createWaveShaper();
+          distortion.curve = curve;
+          distortion.oversample = '4x';
+
+          const rumble = this.ctx.createBiquadFilter();
+          rumble.type = "lowpass";
+          rumble.frequency.setValueAtTime(400, this.ctx.currentTime);
+          rumble.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 1.5);
+
+          const tGain = this.ctx.createGain();
+          tGain.gain.setValueAtTime(0, this.ctx.currentTime);
+          tGain.gain.linearRampToValueAtTime(intensity, this.ctx.currentTime + 0.05);
+          tGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + (3 * intensity));
+
+          thunderSource.connect(distortion);
+          distortion.connect(rumble);
+          rumble.connect(tGain);
+          tGain.connect(envGain);
+
+          thunderSource.start();
+      };
+
+      (window as any).triggerThunder = triggerThunder;
+
+      const scheduleLightning = () => {
+          if (!this.ctx || !this.activeTracks["Thunderstorm"]) return;
+          const intensity = 0.4 + Math.random() * 0.6;
+          triggerThunder(intensity);
+          (window as any).lightningFlash = { intensity, time: Date.now() };
+          const nextDelay = (8 + Math.random() * 27) * 1000;
+          const t = window.setTimeout(scheduleLightning, nextDelay);
+          trackIntervals.push(t);
+      };
+      const firstStrike = window.setTimeout(scheduleLightning, 4000);
+      trackIntervals.push(firstStrike);
+
+      this.activeTracks["Thunderstorm"] = {
+          nodes: trackNodes,
+          intervals: trackIntervals,
+          envGain,
+          envPanner
+      };
+  }
+
+  public playChime() {
+      this.init();
+      if (!this.ctx || !this.masterGain) return;
+      
+      const osc = this.ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(528, this.ctx.currentTime);
+
+      const harmonic = this.ctx.createOscillator();
+      harmonic.type = "sine";
+      harmonic.frequency.setValueAtTime(1056, this.ctx.currentTime);
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, this.ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.8, this.ctx.currentTime + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 4.0);
+
+      osc.connect(gain);
+      harmonic.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start();
+      harmonic.start();
+      
+      osc.stop(this.ctx.currentTime + 4.1);
+      harmonic.stop(this.ctx.currentTime + 4.1);
+      
+      setTimeout(() => {
+          gain.disconnect();
+      }, 4200);
   }
 
   public stopTrack(env: string) {
@@ -513,6 +703,7 @@ export class AudioEngine {
             track.intervals.forEach(clearInterval);
             track.intervals.forEach(clearTimeout);
             track.envGain.disconnect();
+            track.envPanner.disconnect();
         
             delete this.activeTracks[env];
         }

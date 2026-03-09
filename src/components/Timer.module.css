@@ -34,6 +34,15 @@
 }
 
 .timerButton:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.4);
+}
+
+.sessionCounter {
+    font-size: 0.8rem;
+    color: #ffd700;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+    letter-spacing: 0.05em;
+    font-weight: 300;
 }

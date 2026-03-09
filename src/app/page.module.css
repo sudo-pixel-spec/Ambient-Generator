@@ -22,35 +22,108 @@
   z-index: 0;
 }
 
-.controlsOverlay {
-  position: relative;
+.kineticConsole {
+  position: absolute;
+  inset: 0;
   z-index: 10;
-  background: var(--overlay);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  padding: 2.5rem;
-  border-radius: 1.5rem;
-  border: 1px solid var(--glass-border);
-  box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  pointer-events: none;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  width: 90%;
-  max-width: 550px;
-  animation: floatUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.8s ease, transform 0.8s ease, filter 0.8s ease;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 2rem;
 }
 
-.controlsOverlay.hidden {
+.kineticConsole.hidden {
   opacity: 0;
   pointer-events: none;
   filter: blur(20px);
   transform: translateY(50px) scale(0.95);
+  transition: all 0.8s ease;
 }
+
+.floatingDock {
+  pointer-events: auto;
+  display: flex;
+  gap: 0.8rem;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  padding: 0.8rem 1.2rem;
+  border-radius: 3rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    inset 0 2px 4px rgba(255, 255, 255, 0.1);
+  animation: floatUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform;
+}
+
+.activeTrackStack {
+  pointer-events: none;
+  position: absolute;
+  bottom: 6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.8rem;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+}
+
+.trackPod {
+  pointer-events: auto;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(25px) saturate(180%);
+  padding: 1rem 1.5rem;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  
+  animation: podSpringIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  opacity: 0;
+  transform: translateY(20px) scale(0.9);
+  transform-origin: bottom center;
+}
+
+@keyframes podSpringIn {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.podHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.podTitle {
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    text-transform: uppercase;
+}
+
+.podClose {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    transition: color 0.2s;
+}
+.podClose:hover { color: #fff; }
 
 .zenModeExitOverlay {
     position: absolute;
@@ -107,19 +180,17 @@
 .presetsPanel {
     display: flex;
     gap: 0.8rem;
-    background: rgba(0, 0, 0, 0.2);
-    padding: 0.8rem;
-    border-radius: 1rem;
     align-items: center;
     overflow-x: auto;
-    border: 1px solid rgba(0,0,0,0.4);
+    width: 100%;
+    justify-content: center;
 }
 
 .presetLabel {
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.15em;
     color: #64748b;
 }
 
@@ -127,7 +198,7 @@
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--glass-border);
     color: var(--foreground);
-    padding: 0.4rem 0.8rem;
+    padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     font-size: 0.75rem;
     cursor: pointer;
@@ -152,51 +223,71 @@
 .subtitle {
   font-size: 0.95rem;
   font-weight: 300;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: #94a3b8;
 }
 
-.environmentSelector {
-  display: flex;
-  gap: 1.2rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.envButton {
-  background: rgba(255, 255, 255, 0.03);
+.dockButton {
+  background: rgba(255, 255, 255, 0.05);
   color: var(--foreground);
-  border: 1px solid var(--glass-border);
-  padding: 0.8rem 1.8rem;
-  border-radius: 2rem;
+  border: 1px solid transparent;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
   cursor: pointer;
-  font-size: 0.95rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.8rem;
   font-weight: 500;
-  letter-spacing: 0.05em;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: blur(5px);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  transform-origin: bottom center;
 }
 
-.envButton:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-3px);
-  box-shadow: 0 10px 20px -10px rgba(0,0,0,0.3);
-  border-color: rgba(255, 255, 255, 0.2);
+.dockButton::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 60px;
+  background: rgba(0,0,0,0.8);
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.2s ease;
 }
 
-.envButton.active {
+.dockButton:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.4) translateY(-5px);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  z-index: 10;
+}
+
+.dockButton:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dockButton.active {
   background: var(--accent);
   color: #000;
-  border-color: var(--accent);
   box-shadow: 0 0 20px var(--accent-glow);
-  transform: translateY(-2px);
+  transform: scale(1.1) translateY(-2px);
 }
 
-.envTrackContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
+.dockButton.active:hover {
+  transform: scale(1.4) translateY(-5px);
+}
+.envTrackContainer:has(.active) {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 1rem 0.6rem;
 }
 
 .trackSlider {
@@ -243,19 +334,175 @@
   flex-direction: column;
   align-items: center;
   gap: 0.8rem;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--glass-border);
+  width: 100%;
 }
 
 .volumeLabel {
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.2em;
   color: #64748b;
 }
 
+.trackSlider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.1);
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+}
+
+.panSlider {
+  flex: 0 0 50px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(90deg, rgba(56,189,248,0.3) 0%, rgba(255,255,255,0.1) 50%, rgba(168,85,247,0.3) 100%);
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+}
+
+.trackSlider::-webkit-slider-thumb, .panSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--foreground);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.trackControls {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.orbContainer {
+  position: absolute;
+  pointer-events: auto;
+  z-index: 20;
+}
+
+.orbTopLeft { top: 2rem; left: 2rem; }
+.orbTopRight { top: 2rem; right: 2rem; }
+.orbBottomLeft { bottom: 2rem; left: 2rem; }
+.orbBottomRight { bottom: 2rem; right: 2rem; }
+
+.orbButton {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+}
+
+.orbButton:hover {
+  transform: scale(1.1);
+  background: rgba(255,255,255,0.1);
+}
+
+.drawerPanel {
+  position: absolute;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(30px) saturate(200%);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.9);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  min-width: 250px;
+}
+
+.orbTopLeft .drawerPanel { top: 0; left: 60px; transform-origin: left top; }
+.orbTopRight .drawerPanel { top: 0; right: 60px; transform-origin: right top; }
+.orbBottomLeft .drawerPanel { bottom: 0; left: 60px; transform-origin: left bottom; }
+.orbBottomRight .drawerPanel { bottom: 0; right: 60px; transform-origin: right bottom; }
+
+.orbContainer:hover .drawerPanel,
+.orbContainer:focus-within .drawerPanel {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.drawerTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 0.5rem;
+}
+
+.presetsPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    width: 100%;
+}
+
+.masterControlsBox {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+.volumeLabel {
+    color: #fff;
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+.proModeToggle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.proLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.meterContainer {
+    width: 100px;
+    height: 6px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.meterFill {
+    height: 100%;
+    background: #4ade80; /* bright green */
+    transition: width 0.05s linear;
+}
 .volumeSlider {
   -webkit-appearance: none;
   appearance: none;

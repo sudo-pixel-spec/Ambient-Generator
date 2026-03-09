@@ -102,7 +102,10 @@ export default function CanvasVisualizer({ activeEnvs }: CanvasVisualizerProps) 
             swayOffset: Math.random() * Math.PI * 2
         });
     }
-    
+
+    let lightningFlashAlpha = 0;
+    let lastLightningTime = 0;
+
     let globalWind = 0;
 
     let waveOffset = 0;
@@ -112,27 +115,24 @@ export default function CanvasVisualizer({ activeEnvs }: CanvasVisualizerProps) 
 
       ctx.globalCompositeOperation = "source-over";
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      ctx.fillStyle = "rgba(5, 5, 5, 0.4)"; 
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       if (activeEnvs.includes("Night Sky")) {
-        ctx.globalCompositeOperation = "lighter";
-        for (let st of stars) {
-            ctx.beginPath();
-            ctx.arc(st.x, st.y, st.radius, 0, Math.PI * 2);
-            const flicker = Math.abs(Math.sin(st.alpha));
-            ctx.fillStyle = `rgba(180, 220, 255, ${flicker * 0.8})`;
-            ctx.shadowBlur = st.radius * 2;
-            ctx.shadowColor = "#ffffff";
-            ctx.fill();
-            st.alpha += st.speed;
-        }
-        ctx.shadowBlur = 0;
-        ctx.globalCompositeOperation = "source-over";
-      } 
+          ctx.globalCompositeOperation = "lighter";
+          for (let st of stars) {
+              ctx.beginPath();
+              ctx.arc(st.x, st.y, st.radius, 0, Math.PI * 2);
+              const flicker = Math.abs(Math.sin(st.alpha));
+              ctx.fillStyle = `rgba(180, 220, 255, ${flicker * 0.8})`;
+              ctx.shadowBlur = st.radius * 2;
+              ctx.shadowColor = "#ffffff";
+              ctx.fill();
+              st.alpha += st.speed;
+          }
+          ctx.shadowBlur = 0;
+          ctx.globalCompositeOperation = "source-over";
+      }
       
-      if (activeEnvs.includes("Rain")) {
+      if (activeEnvs.includes("Rain") || activeEnvs.includes("Thunderstorm")) {
         ctx.strokeStyle = "#8baeb3";
         ctx.lineCap = "round";
         for (let dr of droplets) {
@@ -335,6 +335,40 @@ export default function CanvasVisualizer({ activeEnvs }: CanvasVisualizerProps) 
               ctx.fill();
           }
           ctx.globalCompositeOperation = "source-over";
+      }
+
+      if (activeEnvs.includes("Thunderstorm")) {
+          const windowFlash = (window as any).lightningFlash;
+          if (windowFlash && windowFlash.time > lastLightningTime) {
+              lastLightningTime = windowFlash.time;
+              lightningFlashAlpha = windowFlash.intensity;
+          }
+
+          if (lightningFlashAlpha > 0.01) {
+              ctx.globalCompositeOperation = "source-over";
+              ctx.strokeStyle = `rgba(220, 235, 255, ${lightningFlashAlpha * 0.8})`;
+              ctx.lineWidth = 2 + lightningFlashAlpha * 3;
+              ctx.shadowColor = "#aad4ff";
+              ctx.shadowBlur = 20 * lightningFlashAlpha;
+              ctx.beginPath();
+              const boltX = canvas.width * (0.3 + Math.random() * 0.4);
+              ctx.moveTo(boltX, 0);
+              let bx = boltX;
+              for (let seg = 0; seg < 8; seg++) {
+                  bx += (Math.random() - 0.5) * 60;
+                  const by = (seg / 8) * (canvas.height * 0.7);
+                  ctx.lineTo(bx, by);
+              }
+              ctx.stroke();
+              ctx.shadowBlur = 0;
+
+              ctx.globalCompositeOperation = "lighter";
+              ctx.fillStyle = `rgba(180, 210, 255, ${lightningFlashAlpha * 0.15})`;
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.globalCompositeOperation = "source-over";
+
+              lightningFlashAlpha *= 0.82;
+          }
       }
 
       animationFrameId = requestAnimationFrame(render);
