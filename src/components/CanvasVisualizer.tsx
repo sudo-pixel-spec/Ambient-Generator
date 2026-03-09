@@ -92,9 +92,24 @@ export default function CanvasVisualizer({ activeEnvs }: CanvasVisualizerProps) 
         });
     }
     
+    const snowflakes: Array<{x: number, y: number, radius: number, speed: number, swayOffset: number}> = [];
+    for(let i = 0; i < 150; i++) {
+        snowflakes.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 3 + 1,
+            speed: Math.random() * 1.5 + 0.5,
+            swayOffset: Math.random() * Math.PI * 2
+        });
+    }
+    
+    let globalWind = 0;
+
     let waveOffset = 0;
 
     const render = () => {
+      globalWind = Math.sin(Date.now() * 0.0005) * 1.5 + Math.sin(Date.now() * 0.0002) * 0.5;
+
       ctx.globalCompositeOperation = "source-over";
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
@@ -131,13 +146,15 @@ export default function CanvasVisualizer({ activeEnvs }: CanvasVisualizerProps) 
                 deflectX = (dx / dist) * (150 - dist) * 0.1;
             }
 
+            const windPush = globalWind * (dr.speed * 0.05);
+
             ctx.moveTo(dr.x, dr.y);
-            ctx.lineTo(dr.x + (dr.speed * 0.1) + deflectX, dr.y + dr.length);
+            ctx.lineTo(dr.x + (dr.speed * 0.1) + deflectX + windPush, dr.y + dr.length);
             ctx.lineWidth = 1.5;
             ctx.strokeStyle = `rgba(139, 174, 179, ${dr.opacity})`;
             ctx.stroke();
 
-            dr.x += (dr.speed * 0.1) + deflectX;
+            dr.x += (dr.speed * 0.1) + deflectX + (windPush * 0.5);
             dr.y += dr.speed;
             
             
@@ -185,7 +202,7 @@ export default function CanvasVisualizer({ activeEnvs }: CanvasVisualizerProps) 
               ctx.fill();
               ctx.shadowBlur = 0;
 
-              f.x += f.speedX + Math.sin(f.phase*0.2) * 0.5;
+              f.x += f.speedX + Math.sin(f.phase*0.2) * 0.5 + (globalWind * 0.3);
               f.y += f.speedY;
 
               if(f.x < 0) f.x = canvas.width;
@@ -253,7 +270,7 @@ export default function CanvasVisualizer({ activeEnvs }: CanvasVisualizerProps) 
                 repelY = (dy / dist) * 2;
             }
 
-            e.x += e.speedX + Math.sin(e.y * 0.05) * 0.5 + repelX;
+            e.x += e.speedX + Math.sin(e.y * 0.05) * 0.5 + repelX + (globalWind * 1.2);
             e.y += e.speedY + repelY;
             e.alpha -= 0.005;
 
@@ -266,6 +283,33 @@ export default function CanvasVisualizer({ activeEnvs }: CanvasVisualizerProps) 
         ctx.globalCompositeOperation = "source-over";
       } 
       
+      if (activeEnvs.includes("Snow Cabin")) {
+          ctx.globalCompositeOperation = "lighter";
+          ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+          
+          for(let flake of snowflakes) {
+              ctx.beginPath();
+              ctx.arc(flake.x, flake.y, flake.radius, 0, Math.PI*2);
+              ctx.shadowBlur = flake.radius * 2;
+              ctx.shadowColor = "#ffffff";
+              ctx.fill();
+              
+              const sway = Math.sin(Date.now() * 0.001 + flake.swayOffset) * 0.5;
+              
+              flake.y += flake.speed;
+              flake.x += sway + (globalWind * 1.5);
+              
+              if (flake.y > canvas.height) {
+                  flake.y = -10;
+                  flake.x = Math.random() * canvas.width;
+              }
+              if (flake.x > canvas.width) flake.x = 0;
+              if (flake.x < 0) flake.x = canvas.width;
+          }
+          ctx.shadowBlur = 0;
+          ctx.globalCompositeOperation = "source-over";
+      }
+
       if (activeEnvs.includes("Waves")) {
           ctx.globalCompositeOperation = "lighter";
           waveOffset += 0.008;

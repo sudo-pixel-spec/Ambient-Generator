@@ -1,4 +1,7 @@
 :root {
+  --mesh-color-1: rgba(56, 189, 248, 0.08);
+  --mesh-color-2: rgba(139, 92, 246, 0.08);
+
   --background: #050505;
   --foreground: #f8fafc;
   --accent: #38bdf8;
@@ -35,8 +38,8 @@ body {
   transition: background-color 0.5s ease, color 0.5s ease;
   
   background-image: 
-    radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.08), transparent 50%),
-    radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 50%);
+    radial-gradient(circle at 15% 50%, var(--mesh-color-1), transparent 50%),
+    radial-gradient(circle at 85% 30%, var(--mesh-color-2), transparent 50%);
   animation: gradientShift 20s ease-in-out infinite alternate;
 }
 

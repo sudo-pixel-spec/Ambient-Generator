@@ -413,6 +413,85 @@ export class AudioEngine {
       };
   }
 
+  public playSnowCabin() {
+      this.init();
+      if (!this.ctx || !this.masterGain || this.activeTracks["Snow Cabin"]) return;
+
+      const bufferSize = this.ctx.sampleRate * 2;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const windSource = this.ctx.createBufferSource();
+      windSource.buffer = buffer;
+      windSource.loop = true;
+
+      const bandpass = this.ctx.createBiquadFilter();
+      bandpass.type = "bandpass";
+      bandpass.frequency.value = 800;
+      bandpass.Q.value = 2.0;
+
+      const windLfo = this.ctx.createOscillator();
+      windLfo.type = "sine";
+      windLfo.frequency.value = 0.08;
+      const windLfoGain = this.ctx.createGain();
+      windLfoGain.gain.value = 400;
+      
+      windLfo.connect(windLfoGain);
+      windLfoGain.connect(bandpass.frequency);
+
+      const envGain = this.ctx.createGain();
+      envGain.gain.value = 0.001;
+      envGain.gain.linearRampToValueAtTime(0.6, this.ctx.currentTime + 3);
+
+      windSource.connect(bandpass);
+      bandpass.connect(envGain);
+      envGain.connect(this.masterGain);
+
+      windSource.start();
+      windLfo.start();
+
+      const trackNodes: AudioNode[] = [windSource, bandpass, windLfo, windLfoGain];
+      const trackIntervals: number[] = [];
+
+      const creak = () => {
+          if (!this.ctx || !this.activeTracks["Snow Cabin"]) return;
+          
+          const osc = this.ctx.createOscillator();
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(50 + Math.random() * 30, this.ctx.currentTime);
+          osc.frequency.linearRampToValueAtTime(30, this.ctx.currentTime + 0.5);
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = "lowpass";
+          filter.frequency.value = 200;
+
+          const cGain = this.ctx.createGain();
+          cGain.gain.setValueAtTime(0.001, this.ctx.currentTime);
+          cGain.gain.linearRampToValueAtTime(0.3, this.ctx.currentTime + 0.1);
+          cGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.6);
+
+          osc.connect(filter);
+          filter.connect(cGain);
+          cGain.connect(envGain);
+
+          osc.start(this.ctx.currentTime);
+          osc.stop(this.ctx.currentTime + 0.7);
+
+          const nextTime = Math.random() * 8000 + 4000;
+          const t = window.setTimeout(creak, nextTime);
+          trackIntervals.push(t);
+      };
+      creak();
+
+      this.activeTracks["Snow Cabin"] = {
+          nodes: trackNodes,
+          intervals: trackIntervals,
+          envGain
+      };
+  }
+
   public stopTrack(env: string) {
     if (!this.activeTracks[env] || !this.ctx) return;
 
